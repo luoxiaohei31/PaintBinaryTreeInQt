@@ -52,7 +52,10 @@ public:
     void removeNode(Node* node);
 
     //设置被选中的node的显示状态
-    void setSelectedNodeColor();
+    void setSelectedNodeBorder(bool showBorder=true);
+
+    //拖动选中的node
+    void moveNode(const QVector2D& trans);
 
 public slots:
     void generateNodes();

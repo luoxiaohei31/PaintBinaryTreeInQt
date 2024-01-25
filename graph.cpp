@@ -122,6 +122,8 @@ void Graph::clear()
     }
     linkLineVec.clear();
     this->scene->clear();
+    selectedLines.clear();
+    selectedNodes.clear();
 
 }
 
@@ -146,6 +148,14 @@ bool Graph::eventFilter(QObject *watched, QEvent *event)
                 buttonType=Qt::MouseButton::ExtraButton1;
             }
             if(e->button()==Qt::LeftButton){
+                if(selectionArea.contains(selectionArea.mapFromScene(e->scenePos()))==false){
+                    while(scene->items().contains(&selectionArea))
+                        scene->removeItem(&selectionArea);
+                    selectionArea.setRect(QRectF{});
+                    this->setSelectedNodeBorder(false);
+                    this->selectedNodes.clear();
+                    this->selectedLines.clear();
+                }
                 if(scene->itemAt(e->scenePos(),QTransform())==nullptr){
                     selectionArea.setPen(QPen(Qt::DotLine));
                     scene->addItem(&selectionArea);
@@ -165,7 +175,6 @@ bool Graph::eventFilter(QObject *watched, QEvent *event)
             }
             if(e->buttons()==Qt::LeftButton){
                 const Node* node=this->getNodeAtPos(e->scenePos());
-                //auto node=scene->itemAt(e->scenePos(),QTransform());
                 if(node!=nullptr){
                     std::vector<LinkLine*> lineList=node->getLineList();
                     for(auto& l:lineList)
@@ -176,18 +185,26 @@ bool Graph::eventFilter(QObject *watched, QEvent *event)
                     QPointF selecBottomRight=selectionArea.mapFromScene(endPos);
                     QRectF selecRect=startPos.x()<=endPos.x() ?
                                           QRectF(QPointF(0,0),selecBottomRight) : QRectF(selecBottomRight,QPointF(0,0));
-                    //QRectF selecRect(QPointF(0,0),selecBottomRight);
-                    //QRectF selecRect(selectionArea.mapToScene(0,0),selecBottomRight);
                     selectionArea.setRect(selecRect);
+                }
+                if(scene->itemAt(e->scenePos(),QTransform{})!=nullptr && !selectedNodes.empty()){
+                    QVector2D trans;
+                    auto x=e->scenePos().x()-e->lastScenePos().x();
+                    auto y=e->scenePos().y()-e->lastScenePos().y();
+                    trans.setX(x);
+                    trans.setY(y);
+                    //QPointF move(e->scenePos().x(),e->scenePos().y())
+                    qDebug()<<"trans: "<<trans;
+                    this->moveNode(trans);
                 }
             }
         }
         if(event->type()==QEvent::GraphicsSceneMouseRelease){
 
             auto e=dynamic_cast<QGraphicsSceneMouseEvent*>(event);
+            endPos=e->scenePos();
             const double distance=(startPos-endPos).manhattanLength();
             if(e->button()==Qt::RightButton && distance>0){
-                endPos=e->scenePos();
                 QGraphicsLineItem* lineItem=dynamic_cast<QGraphicsLineItem*>(scene->items().front());
                 Node* startNode=this->btnGrabNode(lineItem,startPos);
                 Node* endNode=this->btnGrabNode(lineItem,endPos);
@@ -199,27 +216,20 @@ bool Graph::eventFilter(QObject *watched, QEvent *event)
                 }
                 buttonType=Qt::NoButton;
             }
-            if(e->button()==Qt::LeftButton){
+            if(e->button()==Qt::LeftButton && startPos!=endPos){
                 QPainterPath selecPath;
                 selecPath.addRect(selectionArea.rect());
                 selecPath.translate(startPos);
                 scene->setSelectionArea(selecPath);
-                this->setSelectedNodeColor();
-//                while(scene->items().contains(&selectionArea))
-//                    scene->removeItem(&selectionArea);
-//                selectionArea.setRect(QRectF{});
+                this->setSelectedNodeBorder(true);
+                while(scene->items().contains(&selectionArea))
+                    scene->removeItem(&selectionArea);
             }
             if(e->button()==Qt::LeftButton && startPos==endPos){
                 while(scene->items().contains(&selectionArea))
                     scene->removeItem(&selectionArea);
                 selectionArea.setRect(QRectF{});
-                this->selectedNodes.clear();
-                this->selectedLines.clear();
-            }
-            if(e->button()==Qt::LeftButton && !selectionArea.contains(e->scenePos())){
-                while(scene->items().contains(&selectionArea))
-                    scene->removeItem(&selectionArea);
-                selectionArea.setRect(QRectF{});
+                this->setSelectedNodeBorder(false);
                 this->selectedNodes.clear();
                 this->selectedLines.clear();
             }
@@ -300,8 +310,16 @@ void Graph::removeNode(Node *node)
     }
 }
 
-void Graph::setSelectedNodeColor()
+void Graph::setSelectedNodeBorder(bool showBorder)
 {
+    if(!this->selectedNodes.empty()){
+        for(auto& n:selectedNodes){
+            n->setNodeStatus(false);
+        }
+        //return;
+    }
+    selectedNodes.clear();
+    selectedLines.clear();
     QList<QGraphicsItem*> nodeList=scene->selectedItems();
     for(auto& node:nodeList){
         auto n=dynamic_cast<Node*>(node);
@@ -316,7 +334,23 @@ void Graph::setSelectedNodeColor()
     }
 
     for(auto& n:selectedNodes){
-        n->setNodeStatus(true);
+        n->setNodeStatus(showBorder);
+    }
+}
+
+void Graph::moveNode(const QVector2D &trans)
+{
+    if(this->selectedNodes.empty()) return;
+
+    for(auto &n:selectedNodes){
+        QVector2D nodeVec(n->scenePos());
+        nodeVec += trans;
+        n->setPos(nodeVec.toPointF());
+    }
+
+
+    for(auto& l:selectedLines){
+        l->updateSelf();
     }
 }
 
