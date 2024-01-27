@@ -147,20 +147,28 @@ void Node::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 
 void Node::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
-    if(buttonEvent==Qt::LeftButton && event->type()==QEvent::GraphicsSceneMouseMove){
-        if(event->scenePos().x()<=0 || event->scenePos().x()>=this->scene()->width() ||
-           event->scenePos().y()<=0 || event->scenePos().y()>=this->scene()->height()){
-            auto x=std::abs(event->scenePos().x()-0)<std::abs(event->scenePos().x()-this->scene()->width()) ? 0:this->scene()->width()-this->boundingRect().width();
-            auto y=std::abs(event->scenePos().y()-0)<std::abs(event->scenePos().y()-this->scene()->height()) ? 0:this->scene()->height()-this->boundingRect().height();
+    if(event->buttons()==Qt::LeftButton){
+        double x=0;
+        double y=0;
+        double mx=event->scenePos().x();
+        double my=event->scenePos().y();
 
-            x=(0<=event->scenePos().x()&&event->scenePos().x()<=this->scene()->width()) ? event->scenePos().x():x;
-            y=(0<=event->scenePos().y()&&event->scenePos().y()<=this->scene()->width()) ? event->scenePos().y():y;
-            this->setPos(x,y);
+        if(mx<0 || (mx+borderLen)>this->scene()->width()){
+            x=mx<0 ? 0:this->scene()->width()-borderLen;
         }
         else{
-            auto finalPos=event->scenePos()-event->lastPos();
-            this->setPos(finalPos);
+            x=mx-borderLen/2;
         }
+
+        if(my<0 || (my+borderLen)>this->scene()->height()-borderLen){
+            y=my<0 ? 0:this->scene()->height()-borderLen;
+        }
+        else{
+            y=my-borderLen/2;
+        }
+
+        this->setPos(x,y);
     }
+
 }
 

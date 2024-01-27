@@ -179,6 +179,26 @@
      <string>删除节点</string>
     </property>
    </widget>
+   <widget class="QPushButton" name="UpdateForm">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>160</y>
+      <width>231</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>黑体</family>
+      <pointsize>12</pointsize>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>更新界面</string>
+    </property>
+   </widget>
   </widget>
  </widget>
  <resources/>

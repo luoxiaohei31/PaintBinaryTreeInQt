@@ -38,6 +38,7 @@ Graph::Graph(QWidget *parent)
 
     connect(ui->generateNodesBtn,&QPushButton::clicked,this,&Graph::generateNodes);
     connect(ui->clearNodesBtn,&QPushButton::clicked,this,&Graph::clear);
+    connect(ui->UpdateForm,&QPushButton::clicked,this,[this]{scene->update();});
 }
 
 Graph::~Graph()
